@@ -1,0 +1,62 @@
+# Continuous SIREN trained on the whole plant as one field, without per-organ
+# training. Provided for comparison only: these hyperparameters were never tuned
+# and no table in the paper uses this config.
+
+dataset:
+  dataset_path: data/TrackPlant3D/versions
+  sequence: null  # Specify via CLI or will list sequences
+  version: v2
+  label_field: labels  # "labels" = ground-truth organ labels; "predicted_labels" = PSegNet auto-segmentation
+  aligned_leaves: false
+  train_ratio: 1.0
+  split_file: null  # Path to pre-computed train/test split JSON (optional). Example: "configs/datasets/TrackPlant3D/point_splits/maize_control_plant1_split.json"
+  normalize: true
+  min_timepoints: 1
+  exclude_sequences: []  # List of sequence names to exclude entirely (e.g. corrupted sequences)
+
+model:
+  model_type: continuous
+  hidden_features: 256
+  hidden_layers: 5
+  first_omega_0: 30.0
+  hidden_omega_0: 30.0
+
+  # Training
+  n_steps: 50000
+  n_samples: 2048  # Number of points to sample per training iteration
+  lr: 1.0e-5
+  log_interval: 200
+
+  # Time normalization: day-based t_norm with velocity*dt (true) or frame-index-based with dt=1 (false)
+  use_day_based_tnorm: true
+
+  # Multistep loss: compute Chamfer at every intermediate frame (on by default)
+  use_multistep_loss: false
+
+  # ODE integration (off by default — uses Euler)
+  use_odeint: false
+  ode_method: "dopri5"
+  ode_rtol: 1.0e-4
+  ode_atol: 1.0e-5
+  use_adjoint: false
+  train_integration_steps: 1  # Euler sub-steps per frame pair during training and inference (1 = current behavior, ignored when use_odeint)
+  ode_n_steps: null  # Steps for fixed-step odeint solvers (rk4, euler, …); step_size=dt/n per interval. Null = solver default.
+
+output:
+  output_dir: results/fullplant_single_model_batch
+  save_predictions: true
+  save_models: true
+  save_normals: true  # estimate normals for predicted clouds (visualisation only; the model predicts positions)
+  save_plots: true
+  verbose: true
+
+wandb:
+  enabled: false  # opt in with wandb.enabled=true (needs `wandb login`)
+  project: "growfields"
+  entity: null
+  tags: []
+  notes: null
+  group: null
+
+device: cuda
+list_sequences: false

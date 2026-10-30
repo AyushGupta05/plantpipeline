@@ -1,0 +1,85 @@
+# COAP: the "COAP" baseline row of Tables 1-4, a COAP-style encoder-decoder
+# adapted to this task. The encoder (ResnetPointnet) produces shape-aware latent
+# codes from organ point clouds and the decoder (ImplicitNet) predicts velocity
+# fields conditioned on them, in place of GrowFields' learned organ embeddings.
+
+dataset:
+  dataset_path: data/TrackPlant3D/versions
+  sequence: null  # Specify via CLI or will list sequences
+  version: v2
+  label_field: labels  # "labels" = ground-truth organ labels; "predicted_labels" = PSegNet auto-segmentation
+  aligned_leaves: true
+  train_ratio: 1.0
+  normalize: false  # IMPORTANT: Must be false for per-organ training!
+  min_timepoints: 1
+  exclude_sequences: []  # List of sequence names to exclude entirely (e.g. corrupted sequences)
+
+# Default model config (applies to all organs via shared model)
+default_model:
+  model_type: encoder_decoder_continuous
+
+  # Encoder config (ResnetPointnet)
+  latent_dim: 32             # Encoder output dimension
+  encoder_hidden_dim: 128    # ResnetPointnet hidden dimension
+  n_enc_samples: 1024        # Points sampled for encoding
+  lr_encoder: 1.0e-3         # Encoder learning rate
+
+  # Decoder config (ImplicitNet)
+  decoder_dims: [256, 256, 256, 256, 256]  # Hidden layer dimensions
+  decoder_skip_in: [3]       # Skip connection at layer 3
+  zero_init_last: false       # Zero-init decoder last layer (start with zero velocity)
+
+  # Standard training params
+  n_steps: 50000
+  n_samples: 4096
+  organs_per_step: 6
+  use_multistep_loss: true   # Chamfer at every Euler step (not just endpoint)
+  lr: 5.0e-4                 # Decoder learning rate
+  decoder_weight_decay: 0.0   # Weight decay on decoder only (0 = off)
+
+  # Time normalization: day-based t_norm with velocity*dt
+  use_day_based_tnorm: true
+  use_global_tnorm: false  # Use plant-level day range for all organs
+
+  # Regularization (all off by default)
+  use_latent_reg: false
+  latent_reg_lambda: 1.0e-4  # L2 regularization on encoder output (analogous to embed_reg_lambda)
+
+  # Fine-tuning not applicable to encoder-decoder models
+  finetune_enabled: false
+
+  train_integration_steps: 1  # Euler sub-steps per frame pair during training and inference (1 = current behavior, ignored when use_odeint)
+
+  # ODE integration (off by default — uses Euler)
+  use_odeint: false
+  ode_method: "dopri5"
+  ode_rtol: 1.0e-4
+  ode_atol: 1.0e-5
+  use_adjoint: false
+  ode_n_steps: null  # Steps for fixed-step odeint solvers (rk4, euler, …); step_size=dt/n per interval. Null = solver default.
+
+  log_interval: 200
+
+# Per-organ training configuration
+per_organ_training:
+  enabled: true
+
+output:
+  output_dir: results/fullplant_per_organ_encoder_decoder
+  save_predictions: true
+  save_models: true
+  save_normals: true  # estimate normals for predicted clouds (visualisation only; the model predicts positions)
+  save_full_plant: true
+  save_plots: true
+  verbose: true
+
+wandb:
+  enabled: false  # opt in with wandb.enabled=true (needs `wandb login`)
+  project: "growfields"
+  entity: null
+  tags: []
+  notes: null
+  group: null
+
+device: cuda
+list_sequences: false

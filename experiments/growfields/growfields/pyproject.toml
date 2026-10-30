@@ -1,0 +1,39 @@
+# Packaging metadata only. Dependencies stay in requirements.txt, which pins
+# exact versions and needs a custom index URL for torch and a direct wheel URL
+# for pytorch3d -- neither expresses well here, and duplicating them would give
+# the project two sources of truth that silently drift apart.
+#
+#   pip install torch==2.0.1 torchvision==0.15.2 \
+#       --extra-index-url https://download.pytorch.org/whl/cu117
+#   pip install -r requirements.txt
+#   pip install -e .
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "growfields"
+version = "0.1.0"
+description = "Per-organ neural motion fields for 4D plant growth"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Joaquin Gajardo" }]
+
+[project.urls]
+Repository = "https://github.com/Joaquin-Gajardo/growfields"
+
+# scripts/ and tests/ are deliberately not packaged: they are standalone CLIs
+# and test files that nothing imports, and they are run from the repo root.
+[tool.setuptools.packages.find]
+include = ["growfields*"]
+
+# The test suite imports `growfields`, which `requirements.txt` does not install,
+# so the repo root has to be on sys.path. `python -m pytest` puts it there
+# implicitly, but the `pytest` console script does not -- and `pytest tests/` is
+# the form the tests' own README documents. Setting it here rather than in a
+# `tests/pytest.ini` because pytest resolves this file as the configfile (rootdir
+# is the repo root), so a config under tests/ is never read.
+[tool.pytest.ini_options]
+pythonpath = ["."]

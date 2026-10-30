@@ -1,0 +1,31 @@
+# Core dependencies for GrowFields
+# Tested on Python 3.10
+# Installation: conda create -n growfields python=3.10 -y
+#              conda install -n growfields -c conda-forge gcc gxx -y # (required in Fedora distro)
+#              conda activate growfields
+#              pip install torch==2.0.1 torchvision==0.15.2 --extra-index-url https://download.pytorch.org/whl/cu117
+#              pip install -r requirements.txt
+
+# PyTorch3D 0.7.4 (built for Python 3.10, CUDA 11.7, PyTorch 2.0.1)
+pytorch3d @ https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py310_cu117_pyt201/pytorch3d-0.7.4-cp310-cp310-linux_x86_64.whl
+
+# Other packages
+numpy==1.23.1
+scipy==1.10.1
+tqdm==4.66.1
+ipykernel==7.0.1
+omegaconf==2.3.0
+pytest==9.0.2
+wandb==0.25.0
+torchdiffeq==0.2.5
+open3d==0.19.0
+# Not imported by this project. open3d imports plotly at import time, through
+# open3d/visualization/draw_plotly.py, but does not declare it as a dependency --
+# so without this pin `import open3d` fails on a fresh install. Do not remove.
+plotly==5.18.0
+pandas==2.3.3
+
+# Plant shape analysis (TrackPlant3D dataset loaders)
+# Pinned by commit rather than tag: a tag resolves at install time and can be moved,
+# which would silently change what this installs. 99d86f5 is the v0.4.1 release.
+plant-shape-analysis @ git+https://github.com/Joaquin-Gajardo/plant-shape-analysis.git@99d86f5fb474accf3b001f1207ff50bd2d343fbb

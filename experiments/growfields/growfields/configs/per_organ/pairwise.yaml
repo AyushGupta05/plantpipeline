@@ -1,0 +1,67 @@
+# DPF per-organ: the "DPF" per-organ baseline row of Tables 2 and 3.
+# (Table 1's DPF row is the single-model variant, configs/full_plant/pairwise.yaml.)
+# Every organ (stem + leaves) gets its own pairwise Dynamic Point Fields model
+# -- model_type "pairwise" is DPF -- trained frame to frame and then fine-tuned
+# jointly for global consistency.
+
+dataset:
+  dataset_path: data/TrackPlant3D/versions
+  sequence: null  # Specify via CLI or will list sequences
+  version: v2
+  label_field: labels  # "labels" = ground-truth organ labels; "predicted_labels" = PSegNet auto-segmentation
+  aligned_leaves: true
+  train_ratio: 1.0
+  normalize: false  # IMPORTANT: Must be false for per-organ training!
+  min_timepoints: 1
+  exclude_sequences: []  # List of sequence names to exclude entirely (e.g. corrupted sequences)
+
+# Default model config (applies to ALL organs unless overridden)
+default_model:
+  model_type: pairwise  # Default: pairwise for all organs
+  hidden_features: 256
+  hidden_layers: 3
+  omega_0: 30.0
+  n_steps: 2000
+  n_samples: 2048
+  lr: 5.0e-5
+
+  # Fine-tuning (enabled by default for all pairwise organs)
+  finetune_enabled: true
+  finetune_steps: 3000
+  finetune_lr: 5.0e-7
+  finetune_lr_x0: 5.0e-6
+  w_global: 2.0
+  w_local: 0.5
+
+  optimise_x0: false
+
+# Per-organ training configuration
+per_organ_training:
+  enabled: true
+
+  # Optional: override default_model for named organs. Keys are organ names
+  # ("stem", "leaf_1", ...); every organ not listed uses default_model.
+  # organ_configs:
+  #   leaf_1:
+  #     finetune_steps: 2000
+  #     w_global: 5.0
+
+output:
+  output_dir: results/fullplant_per_organ
+  save_predictions: true
+  save_models: true
+  save_normals: true  # estimate normals for predicted clouds (visualisation only; the model predicts positions)
+  save_full_plant: true  # Save full plant predictions (concatenated from all organs)
+  save_plots: true
+  verbose: true
+
+wandb:
+  enabled: false  # opt in with wandb.enabled=true (needs `wandb login`)
+  project: "growfields"
+  entity: null
+  tags: []
+  notes: null
+  group: null
+
+device: cuda
+list_sequences: false

@@ -1,0 +1,74 @@
+# Ours (per-organ MLPs): the "Ours (per-organ MLPs)" row of Tables 1-3.
+# One independent continuous-time SIREN per organ, with no weight sharing or
+# organ conditioning between them.
+
+dataset:
+  dataset_path: data/TrackPlant3D/versions
+  sequence: null  # Specify via CLI or will list sequences
+  version: v2
+  label_field: labels  # "labels" = ground-truth organ labels; "predicted_labels" = PSegNet auto-segmentation
+  aligned_leaves: true
+  train_ratio: 1.0
+  normalize: false  # IMPORTANT: Must be false for per-organ training!
+  min_timepoints: 1
+  exclude_sequences: []  # List of sequence names to exclude entirely (e.g. corrupted sequences)
+
+# Default model config (applies to all leaves unless overridden)
+default_model:
+  model_type: continuous  # Default: continuous for all organs
+  hidden_features: 256
+  hidden_layers: 5
+  first_omega_0: 30.0
+  hidden_omega_0: 30.0
+  n_steps: 30000
+  n_samples: 4096
+  lr: 5.0e-6
+
+  use_multistep_loss: true
+  log_interval: 200
+
+  # ODE integration (off by default — uses Euler)
+  use_odeint: false
+  ode_method: "dopri5"
+  ode_rtol: 1.0e-4
+  ode_atol: 1.0e-5
+  use_adjoint: false
+  train_integration_steps: 1  # Euler sub-steps per frame pair during training and inference (1 = current behavior, ignored when use_odeint)
+  ode_n_steps: null  # Steps for fixed-step odeint solvers (rk4, euler, …); step_size=dt/n per interval. Null = solver default.
+
+  # Time normalization: day-based t_norm with velocity*dt (true) or frame-index-based with dt=1 (false)
+  use_day_based_tnorm: true
+
+  # Note: Fine-tuning not applicable to continuous models
+  finetune_enabled: false
+
+# Per-organ training configuration
+per_organ_training:
+  enabled: true
+
+  # Optional: override default_model for named organs. Keys are organ names
+  # ("stem", "leaf_1", ...); every organ not listed uses default_model.
+  # organ_configs:
+  #   stem:
+  #     n_steps: 50000
+  #     lr: 1.0e-5
+
+output:
+  output_dir: results/fullplant_per_organ
+  save_predictions: true
+  save_models: true
+  save_normals: true  # estimate normals for predicted clouds (visualisation only; the model predicts positions)
+  save_full_plant: true  # Save full plant predictions (concatenated from all organs)
+  save_plots: true
+  verbose: true
+
+wandb:
+  enabled: false  # opt in with wandb.enabled=true (needs `wandb login`)
+  project: "growfields"
+  entity: null
+  tags: []
+  notes: null
+  group: null
+
+device: cuda
+list_sequences: false

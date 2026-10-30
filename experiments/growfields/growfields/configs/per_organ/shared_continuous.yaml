@@ -1,0 +1,75 @@
+# GrowFields: the method of the paper, the "Ours" row of every table.
+# One shared continuous-time SIREN conditioned on learnable organ embeddings
+# learns velocity fields for all organs simultaneously, enabling cross-organ
+# transfer. These are the published hyperparameters -- no overrides needed.
+
+dataset:
+  dataset_path: data/TrackPlant3D/versions
+  sequence: null  # Specify via CLI or will list sequences
+  version: v2
+  label_field: labels  # "labels" = ground-truth organ labels; "predicted_labels" = PSegNet auto-segmentation
+  aligned_leaves: true
+  train_ratio: 1.0
+  normalize: false  # IMPORTANT: Must be false for per-organ training!
+  min_timepoints: 1
+  exclude_sequences: []  # List of sequence names to exclude entirely (e.g. corrupted sequences)
+
+# Default model config (applies to all organs via shared model)
+default_model:
+  model_type: shared_continuous
+  hidden_features: 512
+  hidden_layers: 5
+  first_omega_0: 30.0
+  hidden_omega_0: 30.0
+  n_steps: 50000
+  n_samples: 8192
+  organs_per_step: 10  # Number of organs sampled per training step (points split equally)
+  lr: 5.0e-6
+
+  # Organ embedding
+  embed_dim: 32
+  conditioning: concat  # "concat" (input concatenation), "film" (FiLM modulation), or "none" (no organ conditioning — xyzt-only input; latent-code ablation)
+  embed_init: normal  # "normal" (random N(0, 0.1)) or "onehot" (identity matrix, requires embed_dim >= num_organs)
+  lr_embed: 5.0e-3  # Higher lr for embeddings (100x base lr)
+  embed_reg_lambda: 1.0e-4  # L2 regularization on embeddings
+
+  # Time normalization: day-based t_norm with velocity*dt
+  use_day_based_tnorm: true
+  use_global_tnorm: false  # Use plant-level day range for all organs (recommended for shared model)
+
+  use_multistep_loss: true   # Chamfer at every Euler step (not just endpoint)
+
+  # ODE integration (off by default — uses Euler)
+  use_odeint: false
+  ode_method: "dopri5"
+  ode_rtol: 1.0e-4
+  ode_atol: 1.0e-5
+  use_adjoint: false
+  train_integration_steps: 1  # Euler sub-steps per frame pair during training and inference (1 = current behavior, ignored when use_odeint)
+  ode_n_steps: null  # Steps for fixed-step odeint solvers (rk4, euler, …); step_size=dt/n per interval. Null = solver default.
+
+  log_interval: 200
+
+# Per-organ training configuration
+per_organ_training:
+  enabled: true
+
+output:
+  output_dir: results/fullplant_per_organ_shared
+  save_predictions: true
+  save_models: true
+  save_normals: true  # estimate normals for predicted clouds (visualisation only; the model predicts positions)
+  save_full_plant: true
+  save_plots: true
+  verbose: true
+
+wandb:
+  enabled: false  # opt in with wandb.enabled=true (needs `wandb login`)
+  project: "growfields"
+  entity: null
+  tags: []
+  notes: null
+  group: null
+
+device: cuda
+list_sequences: false

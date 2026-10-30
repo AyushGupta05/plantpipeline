@@ -1,0 +1,29 @@
+# Folders
+backup_*
+*__pycache__*
+/output
+/data
+/tmp
+/results
+/figures
+/renders
+
+# Editable install (pip install -e .)
+*.egg-info/
+build/
+dist/
+
+# File types
+*.png
+*.mp4
+*.out
+*.obj
+*.pdf
+*.gif
+*.webm
+*.log
+# Editor settings are per-developer. launch.json stays tracked: its debug
+# configurations are repo-specific and useful to share.
+.vscode/
+.idea/
+.DS_Store

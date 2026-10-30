@@ -1,0 +1,7 @@
+plant                          full CD  full EPE  organ CD organ EPE
+maize_control_plant1            216.37     16.66    158.77     22.79
+sorghum_control_plant1          262.34     21.42    225.58     26.33
+tobacco_control_plant2           35.74      5.47     62.45      5.42
+tomato2_control_plant3           11.61      6.69     15.66      6.56
+Mean                            131.52     12.56    115.61     15.27
+n_tips: full plant 36 (192 expected on the 8 test plants, headline), per organ after the >=2-frame filter 36 (189 expected)

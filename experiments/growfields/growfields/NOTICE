@@ -1,0 +1,34 @@
+THIRD-PARTY CODE
+================
+
+This repository includes code from the projects below. The code in this
+repository is MIT licensed (see LICENSE); the components named here keep the
+terms stated with each one.
+
+growfields/models/siren.py -- SineLayer, Siren
+
+    Adapted from SIREN, https://github.com/vsitzmann/siren (Sitzmann et al., 2020).
+
+    MIT License
+
+    Copyright (c) 2020 Vincent Sitzmann
+
+growfields/models/encoder_decoder.py -- ResnetBlockFC, ResnetPointnet, ImplicitNet
+
+    Adapted from COAP, https://github.com/markomih/COAP
+    (ImplicitNet follows COAP's version, which credits IGR, Gropp et al.)
+
+    MIT License
+
+    Copyright (c) 2022 Marko Mihajlovic
+
+growfields/utils/metrics.py -- scene_flow_metrics()
+
+    Adapted from DeformationPyramid, https://github.com/rabbityl/DeformationPyramid
+
+    MIT License
+
+    Copyright (c) 2023 Yang Li
+
+The MIT licence text in LICENSE applies to each MIT-licensed component named
+here; the copyright notices differ as stated.

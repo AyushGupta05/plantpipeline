@@ -1,0 +1,23 @@
+data/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# GrowFields reproduction (experiments/growfields): venv, extracted dataset, runs, smoke outputs
+experiments/growfields/.venv/
+experiments/growfields/data/
+experiments/growfields/runs/
+experiments/growfields/smoke/
+experiments/growfields/shim/**/__pycache__/
+experiments/growfields/runs_aws/
+
+# experiment outputs, caches, venvs, logs (summaries are copied into experiments/results/)
+experiments/monogrow/runs/
+experiments/monogrow/cache/
+experiments/richards/runs/
+experiments/*/.venv/
+experiments/aws/*.out
+experiments/aws/*.log
+snapshots/
