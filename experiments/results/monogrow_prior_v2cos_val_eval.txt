@@ -1,0 +1,8 @@
+Sat Oct 31 02:24:59 UTC 2026 PRIOR V2 (GPU) DONE
+=== v2cos 100000 extrapolation: Mean                            185.22     12.05    141.88     15.05
+=== v2cos 100000 interpolation: Mean                             62.24      8.14     55.91     10.86
+=== v2cos 125000 extrapolation: Mean                            180.88     12.75    139.53     15.62
+=== v2cos 125000 interpolation: Mean                             64.86      8.54     55.25     11.25
+=== v2cos 150000 extrapolation: Mean                            151.79     11.49    121.86     14.28
+=== v2cos 150000 interpolation: Mean                             57.51      8.31     52.11     11.26
+=== V2COS EVAL DONE

@@ -19,6 +19,7 @@ All numbers below are ours unless marked "paper".
 | RichardsNet (ours, last-observed template) | 0 | 23.02 / 5.84 * | 20.79 / 7.14 * | 157.66 / 17.85 | ~0 | * template frame scored at 0, not comparable to GF's frame-0 rollout |
 | RichardsNet (ours, nearest-frame template) | 0 | 22.08 / 4.61 | 25.08 / 5.48 | 141.48 / 13.91 (8 plants; 7-plant CD 157.66) | 0.000 | every frame a 1-day prediction; beats GF on extrapolation EPE, ties CD |
 | MonoGrow, nearest source (95k prior, z-only 300 steps; extrap +1000 θ @1e-5; 3 seeds, test) | 300 z (~1 min/plant) | 58.91 ± 0.41 / 12.95 ± 0.30 | 59.06 ± 0.84 / 10.87 ± 0.08 (held-out) | 177.81 ± 36.97 / 21.33 ± 0.50 (8 plants); 7 plants 191.97 / 22.38 full, **151.67 / 20.12 per-organ** (GF per-organ 149.63 / 18.99) | 0.000 (GT 0.040) | runs/gpu_test/RESULTS.md; ties GF on per-organ extrapolation, loses on fit tables; RichardsNet-nearest is better on all three |
+| **MonoGrow, matched one-step objective** (fit.objective=nearest; 95k prior; headline/interp +1000 θ @1e-5, extrap n_z 1000; 3 seeds, test) | ~1k steps (3–4 min/plant) | **13.94 ± 2.90 / 10.70 ± 0.33** (per-organ 12.99 / 12.99) | **41.96 ± 3.37 / 10.63 ± 0.38** (held-out; per-organ 43.18 / 11.11) | 193.40 ± 6.01 / 20.50 ± 0.55 (8 plants; per-organ 148.32 / 18.03) | 0.000 (GT 0.040) | results/monogrow_gpu_test_obj_RESULTS.md; val: headline 59→3.5, interp 55→39, extrap 150→129 |
 | MonoGrow, first-frame source (same codes) | 300 z | 385.48 / 27.79 | 350.81 / 25.02 | 579.67 / 40.81 | 0.000 | shows the nearest-source effect for MonoGrow: 6.5x headline, 5.9x interp, 3.3x extrap |
 
 ## Reading so far (2026-10-30)
@@ -43,6 +44,11 @@ All numbers below are ours unless marked "paper".
 - Objective/inference mismatch to fix next: z is fitted with the multi-step from-first-frame CD, inference is one-step from the nearest frame.
 - 150k GPU prior confirmed degraded: val interpolation nearest z-only 392/20.0 vs 95k CPU prior 55.4/9.1 (GPU box gpu_val). Use the 95k prior; prior v2 (cosine) is the fix.
 - Caveat found: the tuning dry-run's extrapolation/interpolation rows (runs/tune/*) used an early snapshot mislabelled step 0; ignore those rows.
+
+## Overnight results (2026-10-31)
+- Matched objective (fit codes/θ on one-step nearest-frame CD, the quantity inference uses): val headline 59.2→3.50, interpolation 55.4→39.0, extrapolation 149.8→129.3 (results/monogrow_gpu_val_obj_decision.md). Test (3 seeds): headline 13.94/10.70 (was 58.9/12.95), interpolation 41.96/10.63 (was 59.1/10.9), extrapolation 193.4/20.5 (was 177.8/21.3). MonoGrow now beats RichardsNet-nearest on headline CD (13.9 vs 22.1) but not on tip EPE (10.7 vs 4.6) and not on interpolation (42 vs 25); GF+nearest (0.44) remains far ahead on the fit tables.
+- Cosine-decay prior (150k, no late drift; log in results/priors/log_v2cos.csv): val z-only nearest extrapolation 151.8/11.5 (95k prior 160.4/13.1), interpolation 57.5/8.3 (55.4/9.1); checkpoints at 100k/125k worse than 150k, so the decay fixed the degradation. Not yet combined with the matched objective on test.
+- Fleet: gf2 shard (57 jobs) complete and pulled with models; gf1/gf3 unreachable at 13:00 UTC (auto-stopped after finishing, presumably) — their shards (interp/extrap jobs for shards 0 and 2, monotone headline remainder) must be started and pulled before termination; AWS CLI session expired (`aws login` needed).
 
 ## Where things stand (2026-10-30 22:20 UTC)
 - Inference strategy (nearest observed frame) is the dominant effect for every method: GF 0.87→0.44 headline; MonoGrow 385→59 headline, 351→59 interp, 580→178 extrap.
