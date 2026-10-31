@@ -21,3 +21,4 @@ experiments/*/.venv/
 experiments/aws/*.out
 experiments/aws/*.log
 snapshots/
+backup/

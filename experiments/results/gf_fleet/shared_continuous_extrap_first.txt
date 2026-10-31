@@ -1,0 +1,10 @@
+plant                        runs        full CD       full EPE       organ CD      organ EPE
+maize_control_plant2            3    156.59±30.36     17.69±1.67    243.07±33.40     17.69±1.67
+maize_control_plant3            3    215.62±11.23     88.53±2.15    328.81±25.22     69.15±1.32
+sorghum_control_plant2          3    242.42±46.38     26.72±0.69    327.69±75.69     26.72±0.69
+tobacco_control_plant1          3     57.73±1.02      3.73±0.89     13.48±0.86      4.27±0.96
+tobacco_shade_plant3            3      6.76±1.12      4.07±0.11      8.68±1.58      3.87±0.14
+tomato1_heat_plant3             3      3.19±0.40      3.04±0.85      2.92±0.40      3.02±0.97
+tomato1_shade_plant1            3      9.42±1.47      4.70±0.13      7.07±1.06      4.70±0.13
+Mean                                  98.82±12.72     21.21±0.52    133.10±17.60     18.49±0.35
+n_tips: full plant 66 (192 expected on the 8 test plants, headline), per organ after the >=2-frame filter 66 (189 expected); n_tips and the >=2-frame filter counted on the first run, ± = std over runs
