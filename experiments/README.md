@@ -8,7 +8,7 @@ this file is the index. Draft paper: `WRITEUP.md`. Running results table: `RESUL
 |---|---|
 | `DESIGN_MEMO.md` | research memo: GrowFields' weaknesses, Candidates A (MonoGrow), B (TrajDiff, not built), C (RichardsNet), ablation plan, metrics |
 | `RESULTS.md` | the one running results table (paper, repro, nearest, RichardsNet, MonoGrow), findings, decomposition plan, compute log |
-| `WRITEUP.md` | paper-style draft (v0.2): headline numbers in for every method; `[PENDING: ...]` only for the GF interpolation/extrapolation fleet, the last 2 monotone plants, matched-objective and cosine-prior runs |
+| `WRITEUP.md` | paper-style draft (v0.3): headline numbers in for every method, MonoGrow under both fitting objectives, cosine prior on val; `[PENDING: ...]` only for the GF interpolation/extrapolation fleet tables and the last 2 monotone plants (shards gf1/gf3 pending retrieval) |
 | `NEXT_STEPS.md` | resume checklist: what is running on which AWS box, morning pull/collect commands, decision list |
 | `growfields/` | vendored GrowFields (commit `3f8e947`) + our `monotone.patch`, CPU venv, TrackPlant3D v2 data, run/collect/export scripts, `BENCHMARK.md` (protocol + paper numbers), `NOTES.md` (monotone head, Mac runs) |
 | `monogrow/` | Candidate A: shared monotone SIREN prior over all training organ tracks, test-time code fitting, our metric scripts (`README.md`) |
@@ -153,19 +153,27 @@ Val-split family/template/λ ablations: same with `val` and `--family beta`, `--
   were 0.105 (GT floor 0.035).
 - `growth_metrics.py` in `--mode interpolation|extrapolation` with `first` source reports prediction-vs-GT, not field
   violations (use `--mode all`); RichardsNet `last` template violations are the same artefact.
-- MonoGrow prior training is unstable at lr_theta 1e-4 and drifts late even at 2e-5; the 150k GPU checkpoint is
-  suspect, ~95k CPU is the reference. θ fine-tune lr must stay ≤ 2e-5.
+- MonoGrow prior training is unstable at lr_theta 1e-4 and drifts late even at 2e-5; the constant-lr 150k GPU
+  checkpoint is degraded (val interp 392 / 20.0), ~95k CPU is the reference and every test number uses it. The cosine-decay
+  prior v2 (`runs/full_cpu_v2cos`, 150k) removes the drift on val (extrap 151.8 / 11.5 vs 160.4 / 13.1 at 95k, interp
+  57.5 / 8.3 vs 55.4 / 9.1; `results/monogrow_prior_v2cos_val_eval.txt`) but has not been run on test or with the matched
+  objective. θ fine-tune lr must stay ≤ 2e-5.
 - `monogrow/runs/tune/*` extrapolation/interpolation rows used a mislabelled step-0 snapshot; ignore them.
 - GrowFields headline: Mac reproduction is 1 seed on CPU, all 8 plants (0.88 / 1.53); the AWS L4 fleet is 5 seeds, all
   8 plants (0.87 / 1.53; + nearest 0.44 / 1.02) in `growfields/runs_aws/merged/shared_continuous/results_headline{,_nearest}.md`.
-  GF interpolation / extrapolation fleet tables are still running; quote the paper's point estimates for those until then.
+  GF interpolation / extrapolation fleet tables are still in flight: shard gf2 (57 jobs) is pulled, shards gf1 / gf3 are
+  pending retrieval (`RESULTS.md`, Overnight results); quote the paper's point estimates for those until then.
 - GrowFields + monotone head is PARTIAL: 6 of 8 plants (SoH2, TbC1 missing; TbS3 1 seed). Its 6-plant means (0.97 / 1.81;
   + nearest 0.51 / 1.16) are not comparable to 8-plant means; compare per plant.
-- MonoGrow validation numbers are single fits. MonoGrow test numbers are 3 seeds with the 95k CPU prior
-  (`monogrow/runs/gpu_test/RESULTS.md` on the GPU box, copied into `RESULTS.md`); they tie GF on per-organ extrapolation
-  only and do not close the headline / interpolation gap. RichardsNet-nearest beats MonoGrow on all three tables.
-- Matched-objective MonoGrow (`runs/gpu_test_obj`) and the cosine-decay prior v2 are still running; see `NEXT_STEPS.md`
-  for what is where and how to pull it.
+- MonoGrow validation numbers are single fits. MonoGrow test numbers are 3 seeds with the 95k CPU prior, under two
+  fitting objectives: `fit.objective=first` (GF's multi-step from-first-frame CD; 58.91 / 12.95 headline,
+  `monogrow/runs/gpu_test/RESULTS.md` copied into `RESULTS.md`) and `fit.objective=nearest` (one-step nearest-frame CD,
+  the quantity scored; **13.94 / 10.70** headline, 41.96 / 10.63 interp, 193.4 / 20.5 extrap on 8 plants;
+  `results/monogrow_gpu_test_obj_RESULTS.md`). Always state the objective next to a MonoGrow number.
+- Matched objective: it beats RichardsNet-nearest on headline CD (13.9 vs 22.1) but not on EPE (10.7 vs 4.6),
+  interpolation (42 vs 25) or extrapolation (193 vs 141); GF + nearest (0.44) stays far ahead on the fit tables; per-organ
+  7-plant extrapolation 156.5 / 19.3 vs GF 149.6 / 19.0 (first objective 151.7 / 20.1). The matched objective is a
+  fitting change available to any method; GF itself has not been re-fitted with it.
 - RichardsNet `last` reproduces the template frame exactly (CD 0 there); not comparable to GF's frame-0 rollout.
 - Maize in every prior comes from 15 Pheno4D tracks with noisy labels; sugar beet is 65 % of tracks (species-balanced sampling).
 - ε_ψ residual MLP, saturation gate, densification, emergence generation, Candidate B: not implemented.

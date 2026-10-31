@@ -1,14 +1,19 @@
 # Growth priors and nearest-frame inference for 4D plant modelling: decomposing GrowFields' benchmark
 
-Draft v0.2, 2026-10-30 (22:30 UTC). Workshop-length. Status: **headline results in for every method on the test
-split** (GrowFields 5 seeds, GrowFields + nearest 5 seeds, GrowFields + monotone head partial 6/8 plants, RichardsNet,
-MonoGrow 3 seeds). Cells still marked `[PENDING: ...]` are runs in flight on AWS: the GrowFields interpolation /
-extrapolation fleet tables, the last two monotone-head plants, the matched-objective MonoGrow fit and the cosine-decay
-prior (`NEXT_STEPS.md`). Every number in this draft traces to a file in `experiments/`, cited as (file, section). No
-number here was produced for this document; nothing is invented.
+Draft v0.3, 2026-10-31. Workshop-length. Status: **headline results in for every method on the test split**
+(GrowFields 5 seeds, GrowFields + nearest 5 seeds, GrowFields + monotone head partial 6/8 plants, RichardsNet, MonoGrow
+3 seeds under both fitting objectives). New since v0.2: the matched-objective MonoGrow test runs
+(`results/monogrow_gpu_test_obj_RESULTS.md`), the validation grid that chose their recipe
+(`results/monogrow_gpu_val_obj_{summary,decision}.md`) and the cosine-decay prior v2 evaluated on validation
+(`results/monogrow_prior_v2cos_val_eval.txt`). Cells still marked `[PENDING: ...]` are the GrowFields interpolation /
+extrapolation fleet tables (both configs) and the last two monotone-head plants: fleet shard gf2 is pulled, shards gf1
+and gf3 are pending retrieval (`RESULTS.md`, Overnight results). Every number in this draft traces to a file in
+`experiments/`, cited as (file, section). No number here was produced for this document; nothing is invented.
 
-The title stays "decomposing", not "beating": on the test split MonoGrow ties GrowFields on per-organ extrapolation
-Chamfer and does not close the gap on the fit tables (§4.1, §6).
+The title stays "decomposing", not "beating": with the matched fitting objective MonoGrow passes RichardsNet on headline
+Chamfer (13.94 vs 22.08) but not on tip error (10.70 vs 4.61), remains 32× behind GrowFields + nearest on the headline
+table (0.44), 4× behind GrowFields on interpolation (41.96 vs 10.29) and ties it only on per-organ extrapolation
+(§4.1, §6).
 
 ---
 
@@ -30,16 +35,25 @@ trades 4–16 % of headline CD (0.97 / 1.81 first-source, 0.51 / 1.16 nearest, a
 field on the same six plants) for three times fewer Z-extent violations (0.017 vs 0.057, GT floor 0.049)
 (`growfields/runs_aws/merged/monotone_continuous/results_headline{,_nearest}.md`). (iii)
 *Prior*: MonoGrow, a single monotone field shared across 1,088 organ tracks from TrackPlant3D-train, Pheno4D and
-Sugar4D with auto-decoded organ codes and a species-conditional Gaussian prior, fitted at test time by 300 code steps
-per plant (about one minute on an L4) (`monogrow/README.md`). On the test split, 3 seeds, it reaches 58.91 ± 0.41 /
-12.95 ± 0.30 headline, 59.06 ± 0.84 / 10.87 ± 0.08 interpolation and 151.67 / 20.12 on GrowFields' 7-plant per-organ
-extrapolation table against GrowFields' 149.63 / 18.99, with zero monotonicity violations (`RESULTS.md`, table, from
-`monogrow/runs/gpu_test/RESULTS.md`). It ties GrowFields on per-organ extrapolation and does not close the gap on the
-fit tables. A closed-form structured baseline, RichardsNet (four-parameter Richards curves per organ, empirical-Bayes
-species prior, 0.1 s for all eight test plants) with nearest-frame templates beats MonoGrow on all three tables and
-beats GrowFields on extrapolation tip error (141.48 / 13.91 on 8 plants) while tying its per-organ Chamfer
-(`richards/README.md`, Results). We report the gains as a decomposition chain and state plainly what the headline
-metric measures, where GrowFields' extrapolation protocol leaks information, and which cells are still in flight.
+Sugar4D with auto-decoded organ codes and a species-conditional Gaussian prior, fitted at test time by a few hundred
+code steps per plant (one to four minutes on an L4) (`monogrow/README.md`). Fitted with GrowFields' multi-step
+from-first-frame loss it reaches 58.91 ± 0.41 / 12.95 ± 0.30 headline, 59.06 ± 0.84 / 10.87 ± 0.08 interpolation and
+151.67 / 20.12 on GrowFields' 7-plant per-organ extrapolation table against GrowFields' 149.63 / 18.99, 3 seeds, zero
+monotonicity violations (`RESULTS.md`, table). Fitting the codes instead on the one-step nearest-frame Chamfer they are
+scored with (`fit.objective=nearest`, §2.3) lowers the headline to **13.94 ± 2.90 / 10.70 ± 0.33** and interpolation to
+**41.96 ± 3.37 / 10.63 ± 0.38** and leaves extrapolation at 193.40 ± 6.01 / 20.50 ± 0.55 on 8 plants (per-organ
+148.32 / 18.03; 7-plant per-organ 156.46 / 19.25 against GrowFields' 149.63 / 18.99)
+(`results/monogrow_gpu_test_obj_RESULTS.md`). The objective/inference mismatch, not the prior, was most of the headline
+gap, yet MonoGrow still does not close it: GrowFields + nearest is at 0.44. A closed-form structured baseline,
+RichardsNet (four-parameter Richards curves per organ, empirical-Bayes species prior, 0.1 s for all eight test plants)
+with nearest-frame templates is now behind MonoGrow on headline Chamfer (22.08 vs 13.94) but ahead on headline tip error
+(4.61 vs 10.70), on interpolation (25.08 / 5.48 vs 41.96 / 10.63) and on extrapolation (141.48 / 13.91 vs 193.40 / 20.50
+on 8 plants), and beats GrowFields on extrapolation tip error while tying its per-organ Chamfer (`richards/README.md`,
+Results). A cosine-decay learning-rate schedule removes the late-training drift of the shared prior (validation
+extrapolation 151.79 / 11.49 at 150k steps against 160.35 / 13.10 for the 95k checkpoint used on test,
+`results/monogrow_prior_v2cos_val_eval.txt`) and is not yet combined with the matched objective. We report the gains as
+a decomposition chain and state plainly what the headline metric measures, where GrowFields' extrapolation protocol
+leaks information, and which cells are still in flight.
 
 ---
 
@@ -138,6 +152,19 @@ recovers GrowFields' per-plant regime as a special case (`DESIGN_MEMO.md`, §3; 
 GrowFields' PLY layout and GrowFields' unmodified metric scripts score it: per-row CD identical, EPE within 8e-6 mm,
 `n_tips` identical (`monogrow/README.md`, Verified).
 
+**Matched fitting objective (`fit.objective`).** Until the overnight runs the codes were always fitted on GrowFields'
+loss, the multi-step CD of one rollout from the organ's first observed frame through all observed frames, while the
+export predicted each frame from its nearest observed frame: the quantity optimised and the quantity scored did not
+match (`monogrow/README.md`, Objective). `fit.objective=nearest` replaces the loss by the mean over consecutive observed
+pairs (s, t) of CD between frame s's train points rolled out on the 1-day grid to day(t) and frame t's train points —
+exactly what `source=nearest` is scored on (under interpolation the pairs are two days apart) — with the same chunked
+Chamfer, the same λ_prior term (a mean over pairs, not a sum, so λ_prior keeps its scale relative to `first`), the same
+optimiser and step counts and the same optional stage-2 θ fine-tune; `first` stays the default and is bit-identical to
+the previous behaviour, and export and metrics are untouched (`monogrow/README.md`, Objective). The mismatch matters
+because the first-frame loss spends the 32 code dimensions on a long rollout that inference never uses, and the
+one-step loss has a different optimum: on the validation plants it moves the headline from 59.23 to 3.50 mm² at equal
+step budget (§4.3, `results/monogrow_gpu_val_obj_decision.md`).
+
 ### 2.4 RichardsNet: the structured baseline
 
 Each organ's length L(a) (99th-percentile canonical Z) follows a four-parameter Richards curve, width follows the
@@ -175,8 +202,9 @@ length of its own source frame (`monogrow/README.md`, Rollout source).
 **Seeds.** GrowFields paper: 5 seeds for the headline, 3 for interpolation/extrapolation (`growfields/BENCHMARK.md`,
 §1.5). Our Mac reproduction: 1 seed (43 = GrowFields' run_1). AWS campaign: 5 / 3 / 3 seeds for both GrowFields
 configs (`growfields/campaign_shard.sh`); the 5-seed headline for both configs is in, interpolation / extrapolation
-are still running (`NEXT_STEPS.md`). MonoGrow validation numbers: single fit per configuration; MonoGrow test numbers:
-3 seeds, 95k-step CPU prior (`RESULTS.md`, table). RichardsNet: deterministic.
+are still running (`NEXT_STEPS.md`; shard gf2 pulled, gf1 / gf3 pending retrieval, `RESULTS.md`, Overnight results).
+MonoGrow validation numbers: single fit per configuration; MonoGrow test numbers: 3 seeds, 95k-step CPU prior, under
+both fitting objectives (`RESULTS.md`, table; `results/monogrow_gpu_test_obj_RESULTS.md`). RichardsNet: deterministic.
 
 **Compute.** Mac (Apple M5 Pro, CPU torch): GrowFields 0.138 s/step single process, 0.3–0.5 s/step with four
 concurrent processes, ≈ 5.8 h per plant; MonoGrow prior 0.24–0.30 s/step (`RESULTS.md`, Compute log;
@@ -212,8 +240,8 @@ excluded) unless marked "8 plants".
 | 4c | RichardsNet, nearest template | **nearest** | closed form | 22.08 / 4.61 (per-organ 17.83 / 5.50) | 25.08 / 5.48 (per-organ 22.16 / 6.63) | 141.48 / 13.91 (8 plants; per-organ 99.55 / 11.95); 7-plant CD 157.66 | richards/README Results; RESULTS.md table |
 | 5 | MonoGrow, 95k-step shared prior, z-only (300 steps; extrapolation + 1000 θ steps @ 1e-5), 3 seeds | **nearest** | ~300 z steps, ~1 min on L4 | 58.91 ± 0.41 / 12.95 ± 0.30 | 59.06 ± 0.84 / 10.87 ± 0.08 | 177.81 ± 36.97 / 21.33 ± 0.50 (8 plants); 7 plants 191.97 / 22.38 full-plant, **151.67 / 20.12 per-organ** (GF per-organ 149.63 / 18.99) | RESULTS.md table (from monogrow/runs/gpu_test/RESULTS.md on the GPU box) |
 | 6 | MonoGrow, same fitted codes as row 5, first-frame rollout | first | same | 385.48 / 27.79 | 350.81 / 25.02 | 579.67 / 40.81 | RESULTS.md table (gpu_test) |
-| 7 | MonoGrow, matched objective (z fitted with the one-step nearest-source CD it is scored with) | nearest | 300 z | `[PENDING: matched-objective test runs, gpu_test_obj]` | `[PENDING: matched-objective test runs]` | `[PENDING: matched-objective test runs]` | NEXT_STEPS.md |
-| 8 | MonoGrow, cosine-decay prior v2 (100k / 125k / 150k tagged checkpoints) | nearest | 300 z | `[PENDING: cosine-prior evaluation, ablate_prior_len_gpu]` | `[PENDING: cosine-prior evaluation]` | `[PENDING: cosine-prior evaluation]` | NEXT_STEPS.md |
+| 7 | MonoGrow, **matched objective** (`fit.objective=nearest`, §2.3), 95k prior, 3 seeds; headline / interpolation z 300 + 1000 θ @ 1e-5, extrapolation z 1000 | **nearest** | ~1.3k steps, 3–4 min on L4 | **13.94 ± 2.90 / 10.70 ± 0.33** (per-organ 12.99 / 12.99); MaC2 4.58 / 13.04, MaC3 21.96 / 29.96, SoC2 40.40 / 17.25, SoH2 41.84 / 15.01, TbC1 1.25 / 4.40, TbS3 0.98 / 2.87, Tm1H3 0.16 / 1.32, Tm1S1 0.35 / 1.73 | **41.96 ± 3.37 / 10.63 ± 0.38** (per-organ 43.18 / 11.11) | 193.40 ± 6.01 / 20.50 ± 0.55 (8 plants; per-organ 148.32 / 18.03); 7 plants 210.92 / 21.87 full-plant, 156.46 / 19.25 per-organ | results/monogrow_gpu_test_obj_RESULTS.md; recipe results/monogrow_gpu_val_obj_decision.md |
+| 8 | MonoGrow, cosine-decay prior v2, 150k checkpoint, first objective, z-only — **validation split only (4 plants), not test**; shown for the prior, outside the chain | nearest | 300 z | not evaluated | val 57.51 / 8.31 (per-organ 52.11 / 11.26); 95k prior, same recipe, 55.36 / 9.06 | val 151.79 / 11.49 (per-organ 121.86 / 14.28); 95k prior, same recipe, 160.35 / 13.10; 100k / 125k checkpoints 185.22 / 12.05, 180.88 / 12.75 | results/monogrow_prior_v2cos_val_eval.txt; 95k reference results/monogrow_gpu_val_obj_summary.md (nt0, first) |
 
 \* With the `last` template the template frame itself is reproduced exactly (CD 0 on that frame), which GrowFields'
 frame-0 rollout never does; rows 4b are therefore not directly comparable to row 0a (`richards/README.md`, Results).
@@ -232,8 +260,19 @@ MonoGrow the inference rule is worth 6.5× on the headline (385 → 59), 5.9× o
 extrapolation (580 → 178), the same direction as for GrowFields and larger because the code-only fit is coarser.
 **Row 5 against rows 0a and 4c**: MonoGrow ties GrowFields on GrowFields' own per-organ 7-plant extrapolation table
 (151.67 / 20.12 vs 149.63 / 18.99) with zero monotonicity violations and 25× cheaper fitting, but is 68× worse on the
-headline and 5.7× worse on interpolation; RichardsNet-nearest beats MonoGrow on all three tables and beats GrowFields
-on extrapolation EPE (13.91 vs 18.99) (`RESULTS.md`, Where things stand).
+headline and 5.7× worse on interpolation; RichardsNet-nearest beats first-objective MonoGrow on all three tables and beats GrowFields
+on extrapolation EPE (13.91 vs 18.99) (`RESULTS.md`, Where things stand). **Row 7 against rows 5, 4c and 2**: fitting
+the codes on the one-step objective they are scored with cuts the headline 4.2× (58.91 → 13.94) and interpolation 1.4×
+(59.06 → 41.96) at the same inference rule and prior, and leaves extrapolation inside the first objective's seed spread
+(193.40 ± 6.01 vs 177.81 ± 36.97 on 8 plants; 7-plant per-organ 156.46 vs 151.67, GrowFields 149.63). MonoGrow now
+beats RichardsNet-nearest on headline CD (13.94 vs 22.08) but not on headline EPE (10.70 vs 4.61), interpolation
+(41.96 vs 25.08) or extrapolation (193.40 vs 141.48), and stays 32× behind GrowFields + nearest on the headline (0.44)
+and 4× behind GrowFields on interpolation (10.29) (`results/monogrow_gpu_test_obj_RESULTS.md`, Summary and Reference).
+**Row 8**: the cosine-decay schedule removes the late-training degradation of the shared prior (validation
+extrapolation 151.79 / 11.49 at 150k against 160.35 / 13.10 for the 95k checkpoint, and against 392 / 20.0
+interpolation for the drifted constant-lr 150k checkpoint), with the 100k and 125k checkpoints worse than 150k, so the
+fix is the decay and not an earlier stop; it has not been run on test or combined with the matched objective
+(`results/monogrow_prior_v2cos_val_eval.txt`; `RESULTS.md`, Overnight results).
 
 ### 4.2 RichardsNet per plant, test split
 
@@ -297,7 +336,8 @@ validation extrapolation split: 162.61 / 11.85 (`last`), 162.61 / 8.54 (`nearest
 split). MonoGrow z-only with the 95k prior therefore beats RichardsNet on validation extrapolation CD at equal
 protocol and loses on EPE. The 150k GPU prior is confirmed degraded, as the compute log predicted (§5): validation
 interpolation, nearest, z-only, 392 / 20.0 against 55.4 / 9.1 for the 95k CPU prior, so every test number below uses
-the 95k checkpoint and the cosine-decay prior v2 is the fix (`RESULTS.md`, MonoGrow findings, "150k GPU prior").
+the 95k checkpoint; the cosine-decay prior v2 (below) removes the degradation (`RESULTS.md`, MonoGrow findings, "150k
+GPU prior").
 
 **Headline, z-only, 50k prior** (observed frames, full-plant CD): tomato2 13.4, tobacco 71.9, sorghum 869, maize
 1,608, mean 641 at lr_z 1e-2; mean 324 at lr_z 3e-3 (`RESULTS.md`, MonoGrow findings). Monocots with few training
@@ -324,35 +364,80 @@ lr 2e-5 is harmful and 5k steps at 2e-5 diverges. The Z-extent violation rate is
 follows: z-only (300 steps, about 1 min per plant on an L4) for headline and interpolation, plus 1000 θ steps at 1e-5
 for extrapolation (`RESULTS.md`, MonoGrow findings, "GPU val grid"; `monogrow/runs/gpu_val/run.sh`).
 
+**Fitting objective (95k prior, nearest source; `first` vs `nearest` objective × {nt0: z 300; nz1000: z 1000; nt1000:
+z 300 + 1000 θ @ 1e-5}; single fits):** the matched objective wins every variant on validation full-plant CD: headline
+59.23 (`first`, nz1000) → **3.50 / 7.33** (`nearest`, nt1000; per plant maize 3.1, sorghum 9.3, tobacco 1.4, tomato2
+0.2); interpolation held-out 55.36 (`first`, nt0) → **38.99 / 8.43** (`nearest`, nt1000); extrapolation held-out 149.76
+(`first`, nt1000) → **129.29 / 13.10** (`nearest`, nz1000). Under the matched objective θ fine-tuning helps on the fit
+tables (z-only `nearest` gives 44.51 headline, 52.76 interpolation) and hurts on extrapolation (nt1000 142.05 vs nz1000
+129.29); the violation rate is 0.000 in every cell. These three winners are the test recipe of §4.3b
+(`results/monogrow_gpu_val_obj_summary.md`; `results/monogrow_gpu_val_obj_decision.md`).
+
+**Cosine-decay prior v2 (150k steps, lr decayed to 0, tagged checkpoints; z-only 300, nearest source, `first`
+objective):** validation extrapolation held-out 185.22 / 12.05 (100k), 180.88 / 12.75 (125k), **151.79 / 11.49**
+(150k; per-organ 121.86 / 14.28) against 160.35 / 13.10 for the constant-lr 95k checkpoint; interpolation held-out
+62.24 / 8.14, 64.86 / 8.54, **57.51 / 8.31** (150k; per-organ 52.11 / 11.26) against 55.36 / 9.06. The constant-lr 150k
+checkpoint was at 392 / 20.0 on the same interpolation split, so the decay removes the late-training degradation, and
+the checkpoints improve monotonically to 150k, so the gain is from the schedule and not from stopping earlier. Not yet
+combined with the matched objective and not run on test (`results/monogrow_prior_v2cos_val_eval.txt`; `RESULTS.md`,
+Overnight results).
+
 **Pipeline evidence with a 3k-step prior (SoH2, test plant, 0.4 % of planned steps):** z-only 93.1 / 20.6; plus 200 θ
 steps at lr 1e-5: 3.97 / 6.23 with 0 base-distance violations (GrowFields 0.74 / 0.97 after 50k steps)
 (`monogrow/README.md`, Verified). These are not results; they show the stage-2 path works.
 
-### 4.3b MonoGrow, test split (3 seeds)
+### 4.3b MonoGrow, test split (3 seeds, both fitting objectives)
 
-Recipe from the validation grid, 95k-step CPU prior, `nearest` source; headline and interpolation z-only (300 steps),
-extrapolation + 1000 θ steps at lr 1e-5; seeds 0–2; GrowFields' unmodified metric scripts. All numbers below are from
-`RESULTS.md` (table rows "MonoGrow, nearest source" and "MonoGrow, first-frame source"), which copies
-`monogrow/runs/gpu_test/RESULTS.md` from the GPU box.
+95k-step CPU prior, `nearest` source, seeds 0–2 (point-sampling seed; z starts at μ_s, so the spread is sampling noise
+only), GrowFields' unmodified metric scripts. **First objective** (GrowFields' multi-step from-first-frame CD), recipe
+from the validation grid: headline and interpolation z-only (300 steps), extrapolation + 1000 θ steps at lr 1e-5
+(`RESULTS.md`, table rows "MonoGrow, nearest source" and "MonoGrow, first-frame source", copied from
+`monogrow/runs/gpu_test/RESULTS.md`). **Matched objective** (`fit.objective=nearest`, §2.3), recipe from the validation
+objective grid (§4.3): headline and interpolation z 300 + 1000 θ steps at lr 1e-5, extrapolation z-only 1000 steps,
+3–4 min per plant on the L4 (`results/monogrow_gpu_test_obj_RESULTS.md`).
 
-| MonoGrow, test | Headline | Interpolation (held-out) | Extrapolation (held-out) |
+| MonoGrow, test, first objective | Headline | Interpolation (held-out) | Extrapolation (held-out) |
 |---|---|---|---|
-| nearest source, full-plant, 8 plants | **58.91 ± 0.41 / 12.95 ± 0.30** | **59.06 ± 0.84 / 10.87 ± 0.08** | 177.81 ± 36.97 / 21.33 ± 0.50 |
-| nearest source, 7 plants (GF's extrapolation set) | | | 191.97 / 22.38 full-plant; **151.67 / 20.12 per-organ** (GF paper per-organ 149.63 / 18.99, full-plant 117.71 / 21.79) |
+| nearest source, full-plant, 8 plants | 58.91 ± 0.41 / 12.95 ± 0.30 | 59.06 ± 0.84 / 10.87 ± 0.08 | 177.81 ± 36.97 / 21.33 ± 0.50 |
+| nearest source, 7 plants (GF's extrapolation set) | | | 191.97 / 22.38 full-plant; 151.67 / 20.12 per-organ (GF paper per-organ 149.63 / 18.99, full-plant 117.71 / 21.79) |
 | first-frame source, same fitted codes | 385.48 / 27.79 | 350.81 / 25.02 | 579.67 / 40.81 |
 | Z-extent violation rate (GT floor) | 0.000 (0.040) | 0.000 | 0.000 |
 
-Three readings. (i) Inference dominates again: the same codes rolled out from the first frame are 6.5× / 5.9× / 3.3×
-worse on the three tables. (ii) On GrowFields' own per-organ extrapolation table MonoGrow ties GrowFields (151.67 vs
-149.63 CD, 20.12 vs 18.99 EPE) with no per-plant velocity field, zero monotonicity violations and about one minute of
-fitting per plant against 20–45 minutes for GrowFields on the same GPU (`results_headline.md`, training times); the
-seed spread on extrapolation (± 36.97) is large and driven by the monocots. (iii) It does not close the fit gap:
-58.91 against GrowFields' 0.87 (first) / 0.44 (nearest) on the headline, 59.06 against 10.29 on interpolation. The
-cross-plant prior with 32 free numbers per organ cannot reproduce observed frames to sub-mm² Chamfer, which is what
-those two tables reward (§5.1). RichardsNet with nearest templates is better than MonoGrow on all three tables (22.08 /
-4.61, 25.08 / 5.48, 141.48 / 13.91 on 8 plants; row 4c), so the learned field has so far not earned its parameters
-over four Richards parameters per organ. Two fixes are running: fitting z with the one-step nearest-source objective it
-is scored with instead of the multi-step from-first-frame CD, and the cosine-decay prior (`NEXT_STEPS.md`; rows 7–8).
+| MonoGrow, test, matched objective | Headline | Interpolation (held-out) | Extrapolation (held-out) |
+|---|---|---|---|
+| nearest source, full-plant, 8 plants | **13.94 ± 2.90 / 10.70 ± 0.33** | **41.96 ± 3.37 / 10.63 ± 0.38** | 193.40 ± 6.01 / 20.50 ± 0.55 |
+| nearest source, per-organ, 8 plants | 12.99 ± 1.69 / 12.99 ± 0.24 | 43.18 ± 2.82 / 11.11 ± 0.24 | 148.32 ± 8.43 / 18.03 ± 0.39 |
+| nearest source, 7 plants (GF's extrapolation set) | | | 210.92 ± 7.09 / 21.87 ± 0.68 full-plant; 156.46 ± 10.10 / 19.25 ± 0.53 per-organ |
+| first-frame source, same fitted codes / θ | 118.89 ± 12.29 / 23.17 ± 1.68 | 142.85 ± 4.52 / 23.55 ± 1.39 | 564.40 ± 51.32 / 37.34 ± 1.19 |
+| Z-extent violation rate (GT floor) | 0.000 (0.040) | 0.000 (0.039) | 0.000 (0.040) |
+| length MAE mm, observed / held-out | 2.4 / — | 7.8 / 5.9 | 3.9 / 15.3 (+1/+2/+3 d: 7.5 / 16.7 / 21.9) |
+
+Per plant, matched objective, nearest source, full-plant CD / EPE (mean over seeds; held-out frames for interpolation
+and extrapolation) (`results/monogrow_gpu_test_obj_RESULTS.md`, Per plant):
+
+| | MaC2 | MaC3 | SoC2 | SoH2 | TbC1 | TbS3 | Tm1H3 | Tm1S1 | Mean |
+|---|---|---|---|---|---|---|---|---|---|
+| headline | 4.58 / 13.04 | 21.96 / 29.96 | 40.40 / 17.25 | 41.84 / 15.01 | 1.25 / 4.40 | 0.98 / 2.87 | 0.16 / 1.32 | 0.35 / 1.73 | 13.94 / 10.70 |
+| interpolation | 68.43 / 17.01 | 45.92 / 23.87 | 88.29 / 11.80 | 81.59 / 12.21 | 23.00 / 7.98 | 19.17 / 6.18 | 3.62 / 2.62 | 5.65 / 3.37 | 41.96 / 10.63 |
+| extrapolation | 267.70 / 21.07 | 907.57 / 84.75 | 175.70 / 17.41 | 70.75 / 10.91 | 46.27 / 10.10 | 40.19 / 10.19 | 19.79 / 4.55 | 19.20 / 4.97 | 193.40 / 20.50 |
+
+Four readings. (i) Inference dominates again: under the first objective the same codes rolled out from the first frame
+are 6.5× / 5.9× / 3.3× worse on the three tables; under the matched objective 8.5× / 3.4× / 2.9×. (ii) The
+objective/inference mismatch was most of MonoGrow's headline gap: matching the fitting loss to the one-step rule cuts
+the headline 4.2× (58.91 → 13.94) and interpolation 1.4× (59.06 → 41.96) with the same prior and the same 32 numbers
+per organ, and the per-plant pattern follows the prior's species coverage — tomato and tobacco at 0.16–1.25 mm², maize
+and sorghum at 4.6–42 (§3, Leakage rule). The headline EPE barely moves (12.95 → 10.70) and stays above RichardsNet's
+4.61: the matched loss places surfaces, not tips. (iii) On GrowFields' own per-organ 7-plant extrapolation table MonoGrow
+ties GrowFields under either objective (151.67 / 20.12 first objective, 156.46 / 19.25 matched, GrowFields 149.63 /
+18.99) with zero monotonicity violations and one to four minutes of fitting per plant against 20–45 minutes for
+GrowFields on the same GPU (`results_headline.md`, training times); the matched objective is slightly worse on 8-plant
+full-plant extrapolation (193.40 vs 177.81) but inside the first objective's seed spread (± 36.97 → ± 6.01), and MaC3
+alone (907.57 / 84.75) is almost half of the 8-plant sum. (iv) It still does not close the fit gap: 13.94 against
+GrowFields' 0.87 (first) / 0.44 (nearest) on the headline, 41.96 against 10.29 on interpolation. RichardsNet with
+nearest templates is now behind MonoGrow on headline CD (22.08 vs 13.94) but ahead on headline EPE (4.61 vs 10.70),
+interpolation (25.08 / 5.48 vs 41.96 / 10.63) and extrapolation (141.48 / 13.91 vs 193.40 / 20.50 on 8 plants; row
+4c). The cosine-decay prior (§4.3, row 8) has not been combined with the matched objective; that combination is the next
+MonoGrow run (`RESULTS.md`, Overnight results).
 
 ### 4.4 Growth-plausibility metrics
 
@@ -364,7 +449,8 @@ is scored with instead of the multi-step from-first-frame CD, and the cosine-dec
 | GrowFields original + nearest export, same models | 0.057 (0.062) | 1.62 | 0.73 / — | runs_aws/merged/shared_continuous/results_headline_nearest.md |
 | GrowFields + monotone head, 50k, 5 seeds, **6 of 8 plants**, first source | **0.000** (0.049) | 0.00 | 1.08 / — | runs_aws/merged/monotone_continuous/results_headline.md |
 | GrowFields + monotone head + nearest export, same 6 plants | 0.017 (0.049) | 0.93 | 0.92 / — | runs_aws/merged/monotone_continuous/results_headline_nearest.md |
-| MonoGrow, test, nearest, 3 seeds (headline / interp / extrap) | 0.000 (0.040) | — | — | RESULTS.md table (gpu_test) |
+| MonoGrow, test, nearest, 3 seeds, first objective (headline / interp / extrap) | 0.000 (0.040) | — | — | RESULTS.md table (gpu_test) |
+| MonoGrow, test, nearest, 3 seeds, matched objective (headline / interp / extrap) | 0.000 (0.040 / 0.039 / 0.040) | 0.0 / 0.1 / 0.0 (86.5 / 78.6 / 81.6) | 2.4 / — ; 7.8 / 5.9 ; 3.9 / 15.3 | results/monogrow_gpu_test_obj_RESULTS.md |
 | RichardsNet, first template, any variant | 0.000 | — | 6.1 / — (headline); 5.2 / 11.9 (extrap) | richards/README Results |
 | RichardsNet, nearest, headline / extrap | 0.000 | 0 | 2.5 / — ; 2.4 / 8.7 (+1/+2/+3: 3 / 10 / 13) | richards/README Results |
 | RichardsNet, last, headline | 0.006 (0.040) † | 9.4 (86.5) † | 2.0 / — | richards/README Results |
@@ -383,7 +469,8 @@ every violation on the 6 plants finished so far (0.000, 0.00 mm) at a cost of 0.
 (1.08 vs 0.90). With nearest export each frame is referenced to the GT length of its own source frame, so the
 monotone-head rate of 0.017 is prediction-vs-GT noise around a monotone field, not field violations; it is still three
 times below the original field's 0.057 under the same export (`results_headline{,_nearest}.md`, growth_metrics
-output, both configs). MonoGrow is at 0.000 on all three test tables against a GT floor of 0.040 (`RESULTS.md`, table).
+output, both configs). MonoGrow is at 0.000 on all three test tables under both fitting objectives against a GT floor of 0.039–0.040
+(`RESULTS.md`, table; `results/monogrow_gpu_test_obj_RESULTS.md`).
 
 ---
 
@@ -409,25 +496,34 @@ output, both configs). MonoGrow is at 0.000 on all three test tables against a G
    drifted from ≈ 7,000 (growth head g 0.05 → 0.21). The 6k-step sweep chose lr_θ 2e-5, λ_g 1e-3, clip 1.0 (batch CD
    25.9 mm² vs 35.3 for the alternative). Even at 2e-5 the growth head drifts late: on the GPU run g rose
    monotonically 0.016 (95k) → 0.107 (145k) with batch CD trending up, so the 150k checkpoint is suspect and the ≈ 95k
-   CPU checkpoint is the healthy reference; a v2 prior with cosine decay to 0 and tagged checkpoints is running
-   (`RESULTS.md`, Compute log; `aws/fleet_poll.log`). Any MonoGrow test number must state which checkpoint it used.
+   CPU checkpoint is the healthy reference used for every test number (`RESULTS.md`, Compute log; `aws/fleet_poll.log`).
+   The v2 prior with cosine decay to 0 removes the drift on validation (extrapolation 151.79 / 11.49 at 150k vs
+   160.35 / 13.10 at 95k; interpolation 57.51 / 8.31 vs 55.36 / 9.06, `results/monogrow_prior_v2cos_val_eval.txt`) but
+   has not been used on test. Any MonoGrow number must state which checkpoint and which fitting objective it used.
 6. **Seeds and partial tables.** The GrowFields headline rows (1', 2) are 5 seeds on the L4 fleet and reproduce the
    paper within its own ± (0.02 CD / 0.06 EPE ours vs 0.02 / 0.11 paper; `results_headline.md`;
-   `growfields/BENCHMARK.md`, §1.5). The GrowFields interpolation and extrapolation rows are still running, so the
-   only extrapolation comparison available today is against the paper's point estimates. The monotone-head rows are
+   `growfields/BENCHMARK.md`, §1.5). The GrowFields interpolation and extrapolation rows are still in flight (shard gf2 pulled, gf1 / gf3 pending
+   retrieval, `RESULTS.md`, Overnight results), so the only extrapolation comparison available today is against the
+   paper's point estimates. The monotone-head rows are
    **6 of 8 plants** (TbS3 with one seed) and their means are not comparable to 8-plant means; the Mac rows are one
    seed (43) on CPU. EPE varies ~1 mm between identical CUDA runs (`growfields/BENCHMARK.md`, §5.9).
-7. **MonoGrow's test numbers are 3 seeds with a recipe tuned on validation plants** whose species mix differs (val has
-   tomato2, test has tomato1). The headline gap to GrowFields (58.91 vs 0.44–0.87) is a model limitation, not a seed
-   effect (± 0.41); the extrapolation seed spread (± 36.97) is large and monocot-driven. MonoGrow does not beat
-   GrowFields on any fit table and ties it only on per-organ extrapolation (`RESULTS.md`, table).
-8. **Species coverage of the prior is uneven.** Maize rests on 15 Pheno4D tracks with noisy labels; sugar beet is 65 %
+7. **MonoGrow's test numbers are 3 seeds with recipes tuned on validation plants** whose species mix differs (val has
+   tomato2, test has tomato1), and the matched-objective recipe was chosen on the same four plants after the first
+   objective's test runs were in. The headline gap to GrowFields (13.94 vs 0.44–0.87) is a model limitation, not a
+   seed effect (± 2.90); the first objective's extrapolation spread (± 36.97) was monocot-driven and the matched
+   objective's (± 6.01) is small. MonoGrow beats RichardsNet-nearest on headline CD only, does not beat GrowFields on
+   any fit table and ties it only on per-organ extrapolation (`results/monogrow_gpu_test_obj_RESULTS.md`; `RESULTS.md`,
+   table).
+8. **The matched objective is a fitting change, not a model change.** Like the nearest-source rule it is available to
+   any method, including GrowFields' own 50k-step per-plant fit; we have not run GrowFields with a one-step-pair loss,
+   so rows 1'–3' remain `first`-objective fits (`monogrow/README.md`, Objective).
+9. **Species coverage of the prior is uneven.** Maize rests on 15 Pheno4D tracks with noisy labels; sugar beet is 65 %
    of tracks (species-balanced sampling mitigates this) (`monogrow/README.md`, Open issues).
-9. **RichardsNet's headline failure is structural**: axis-aligned scaling cannot represent monocot leaf unfolding; the
+10. **RichardsNet's headline failure is structural**: axis-aligned scaling cannot represent monocot leaf unfolding; the
    residual MLP ε_ψ, densification and emergence generation are not implemented (`richards/README.md`, Unverified).
-10. **Not implemented from the design memo**: the saturation gate, 4× source densification, the hypernetwork and
+11. **Not implemented from the design memo**: the saturation gate, 4× source densification, the hypernetwork and
     MetaSDF variants, and Candidate B (trajectory diffusion with an emergence model) (`monogrow/README.md`, Open issues).
-11. **Compute reporting.** GrowFields reports no compute; our timings are on an Apple M5 Pro and an NVIDIA L4 and are
+12. **Compute reporting.** GrowFields reports no compute; our timings are on an Apple M5 Pro and an NVIDIA L4 and are
     not comparable across the two (`growfields/BENCHMARK.md`, §3; `RESULTS.md`, Compute log).
 
 ---
@@ -444,17 +540,24 @@ The other two axes are smaller and honestly mixed. The monotone velocity head, d
 513 parameters, trades 4–16 % of headline CD (0.51 vs 0.44 under nearest export on the same 6 of 8 plants finished
 so far) for three times fewer Z-extent violations (0.017 vs 0.057) and zero under first-frame rollout, with an exact but
 narrow guarantee on base distance (`monotone_continuous/results_headline{,_nearest}.md`). The cross-plant prior,
-MonoGrow, fitted by 300 code steps per plant in about a minute, ties GrowFields on its per-organ 7-plant extrapolation
-table (151.67 / 20.12 vs 149.63 / 18.99) with zero violations and 3-seed spreads reported, but does not close the gap
-on the fit tables (58.91 headline, 59.06 interpolation) and is beaten on all three tables by the four-parameter
-RichardsNet with nearest templates, which itself beats GrowFields on extrapolation tip error (13.91 vs 18.99 mm) and
-ties its per-organ Chamfer at ~1e-5 of the compute (`richards/README.md`, Results). The title therefore stays
-"decomposing": the chain in §4.1 attributes GrowFields' headline to inference strategy first, per-plant fitting
-second, and shows that neither a monotone constraint nor a cross-plant prior has yet substituted for the latter. The
-cells still in flight — GrowFields' own interpolation and extrapolation with the nearest rule, the last two
-monotone-head plants, the matched-objective fit and the cosine prior (`NEXT_STEPS.md`) — will sharpen the
-extrapolation column, where the structured and learned priors are closest to GrowFields, and are not expected to
-change the fit-table reading.
+MonoGrow, fitted by a few hundred code steps per plant in one to four minutes, ties GrowFields on its per-organ 7-plant
+extrapolation table (151.67 / 20.12 with GrowFields' fitting loss, 156.46 / 19.25 with the matched one-step loss, vs
+149.63 / 18.99) with zero violations and 3-seed spreads reported. Its fit-table numbers in v0.2 rested on a mismatch:
+the codes were fitted on a multi-step rollout from the first frame and scored on one-step predictions from the nearest
+frame. Fitting them on the quantity scored moves the headline from 58.91 to 13.94 mm² and interpolation from 59.06 to
+41.96 (`results/monogrow_gpu_test_obj_RESULTS.md`), now below the four-parameter RichardsNet on headline Chamfer
+(22.08) but not on tip error (4.61 vs 10.70), interpolation (25.08) or extrapolation (141.48 vs 193.40 on 8 plants);
+RichardsNet itself beats GrowFields on extrapolation tip error (13.91 vs 18.99 mm) and ties its per-organ Chamfer at
+~1e-5 of the compute (`richards/README.md`, Results). GrowFields + nearest at 0.44 remains 32× ahead on the headline
+and GrowFields 4× ahead on interpolation (10.29). The cosine-decay schedule fixes the shared prior's late-training
+drift on validation (extrapolation 151.79 / 11.49 vs 160.35 / 13.10, `results/monogrow_prior_v2cos_val_eval.txt`) and
+has not yet been combined with the matched objective. The title therefore stays "decomposing": the chain in §4.1
+attributes GrowFields' headline to inference strategy first, per-plant fitting second, and shows that neither a
+monotone constraint nor a cross-plant prior has yet substituted for the latter — the one new lever, matching the
+fitting objective to the inference rule, is itself a fitting change available to any method. The cells still in flight
+— GrowFields' own interpolation and extrapolation with the nearest rule and the last two monotone-head plants, on fleet
+shards gf1 and gf3 pending retrieval (`RESULTS.md`, Overnight results) — will sharpen the extrapolation column, where
+the structured and learned priors are closest to GrowFields, and are not expected to change the fit-table reading.
 
 ---
 
@@ -481,6 +584,8 @@ $PY fit_test.py full fit.variant=extrapolation fit.split=val fit.source=nearest 
 $PY metrics.py --experiment_dir runs/ablate_prior_len/extrapolation_cpu95k --mode extrapolation
 $PY growth_metrics.py --experiment_dir runs/ablate_prior_len/extrapolation_cpu95k --mode extrapolation
 bash runs/gpu_test/run.sh headline 0                              # test split, nearest then first (reuse), seed 0
+# matched objective: add fit.objective=nearest (val grid + decision: runs/gpu_val_obj/{run.sh,chain.sh,decide.py};
+#   test recipes per variant in the header of results/monogrow_gpu_test_obj_RESULTS.md, runs in runs/gpu_test_obj/)
 
 # RichardsNet
 cd ../richards; PY=../monogrow/.venv/bin/python
