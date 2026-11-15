@@ -1,39 +1,24 @@
-# Resume checklist (written 2026-10-30 ~22:10 UTC, before the laptop closed)
+# Next steps (updated 2026-11-15)
 
-Everything that matters overnight runs on AWS in tmux and the boxes stop themselves when idle for 60 min.
-Nothing on the Mac survives the lid closing; all Mac-side chains were either finished or duplicated on the box.
+State: every planned run is complete and pulled; all four AWS boxes were stopped on 31 Oct (terminate them if not already done). The write-up is at v1.0 draft (experiments/WRITEUP.md) with no placeholders. The repo is committed; `git push` is Ayush's step. Backup archives for Google Drive are in `backup/` (git-ignored).
 
-## What is running on AWS (us-east-1, Project=plantpipeline, $0.805/h each while up)
-| box | what | where | expected end |
-|---|---|---|---|
-| gf1, gf2, gf3 | GrowFields campaign shards (170 jobs: headline 5 seeds × 2 configs, interpolation 3 seeds × 2, extrapolation 3 seeds × 2) | `~/plantpipeline/experiments/growfields/runs/` | ~2026-10-31 17:00–20:00 UTC, then auto-stop |
-| monogrow (`.current_instance`) | tmux `obj`: matched-objective val grid + test runs (runs/gpu_val_obj, runs/gpu_test_obj); tmux `prior2`: cosine-decay prior (runs/full_gpu_v2cos, tagged ckpts every 25k); tmux `v2eval`: evaluates that prior's 100k/125k/150k checkpoints on val when it finishes (runs/ablate_prior_len_gpu) | `~/plantpipeline/experiments/monogrow/runs/` | prior ~4–6 h; obj chain a few hours; then auto-stop |
+## The one prepared but un-run experiment: GrowFields on our other datasets
+Folder: `experiments/gf_on_ours/` (converter from `data/unified` to GrowFields' PLY layout, point splits, run/score scripts, smoke-tested on CPU at 200 steps). Purpose: test whether the ranking found on TrackPlant3D (GrowFields vs +nearest-source vs RichardsNet vs MonoGrow) holds on full-resolution Pheno4D (maize, tomato; 14 plants) and Sugar4D (sugar beet; 48 plants, 16 scans each).
 
-If a box has stopped: `aws ec2 start-instances --instance-ids <id>` (ids in experiments/aws/INSTANCE.md "Fleet" table), wait, then pull.
-If ssh times out: the laptop's public IP changed; `aws ec2 authorize-security-group-ingress --region us-east-1 --group-id sg-0cd539950cfd25db4 --protocol tcp --port 22 --cidr $(curl -s https://checkip.amazonaws.com)/32`.
+Cost (GrowFields at 50k steps per plant): see `experiments/gf_on_ours/README.md` for the measured s/step; on an L4 (g6.xlarge, ~$0.8/h) expect ~25–40 min per plant, i.e. ~30–40 GPU-hours for all 62 plants × headline, more for interpolation/extrapolation; RichardsNet and MonoGrow fits on the same plants are minutes.
 
-## Morning commands (from /Users/ayush/dev/plantpipeline/experiments/aws)
-```bash
-./status_all.sh                                   # shards done? boxes up?
-./pull_results.sh --collect                       # GF fleet → growfields/runs_aws/merged + results.md per stage (headline/interp/extrap, both configs)
-cd ../growfields && bash export_nearest_all.sh runs_aws/merged nearest   # GF + nearest-source exports (CWD growfields; needs configs symlink, present)
-for c in shared_continuous monotone_continuous; do .venv/bin/python collect_results.py $c --experiment_dir runs_aws/merged/$c/results/fullplant_batch_${c}_test_aligned_nearest; cp runs/$c/results.md runs_aws/merged/$c/results_headline_nearest.md; done
-#   interpolation/extrapolation stage dirs: see runs_aws/merged/<config>/results/ (names contain interp/extrap); score with
-#   ../monogrow/.venv/bin/python ../monogrow/metrics.py --experiment_dir <dir> --mode interpolation|extrapolation --tp3d_dir data/TrackPlant3D/versions/v2/gt_corrected_v2
-cd ../aws && IP=$(awk '{print $2}' .current_instance) && rsync -az -e "ssh -i ~/.ssh/icp-flow-aws" --exclude 'sequences/' --exclude '*.ply' --exclude '*.pt' \
-  ubuntu@$IP:plantpipeline/experiments/monogrow/runs/gpu_test ubuntu@$IP:plantpipeline/experiments/monogrow/runs/gpu_val_obj ubuntu@$IP:plantpipeline/experiments/monogrow/runs/gpu_test_obj ubuntu@$IP:plantpipeline/experiments/monogrow/runs/ablate_prior_len_gpu ../monogrow/runs/
-./stop_all.sh                                     # or terminate_all.sh once results are pulled (EBS ~$16/month per box if only stopped)
-```
+When compute is available:
+1. `cd experiments/aws && YES=1 ./launch.sh gf1` (quota L-DB2E81BA is 32 vCPU; three other instances belong to other projects) — or reuse a stopped box with `aws ec2 start-instances`.
+2. `./sync_data.sh --code gf1` plus rsync `experiments/gf_on_ours/data` to the box; run `experiments/gf_on_ours/run_gf.sh` per plant in tmux (P=1 per GPU), then `score.sh` and `run_baselines.sh`.
+3. Pull with rsync, score locally, add a "cross-dataset" table to RESULTS.md and WRITEUP.md §4.
 
-## Then
-1. Fill the `[PENDING: …]` placeholders in experiments/WRITEUP.md from: growfields/runs_aws/merged/*/results*.md (GF 5-seed, GF+monotone, GF+nearest for all three tables), monogrow/runs/gpu_test/RESULTS.md (MonoGrow test, nearest vs first, 3 seeds), monogrow/runs/gpu_test_obj/RESULTS.md (matched objective), monogrow/runs/ablate_prior_len_gpu (prior v2 vs 95k), richards/README.md.
-2. Update experiments/RESULTS.md table rows marked pending.
-3. Decide the title claim from the numbers (see WRITEUP.md note on "decomposing" vs "beating").
-4. Commit the repo (nothing is committed yet; data/ and venvs are git-ignored).
-5. Email Bonn (Lasse Klingbeil) about the Pheno4D licence before any publication.
+## Smaller follow-ups
+- MonoGrow: longer stage-2 θ fine-tune on the matched one-step objective (the fit-table gap is on monocots); evaluate the cosine prior (results/priors/ckpt_v2cos150k.pt) with the matched objective on test.
+- Re-fit GrowFields itself on the one-step (nearest) objective for a fully matched comparison.
+- Email Lasse Klingbeil (Bonn) about the Pheno4D licence before any publication.
 
 ## Known loose ends
-- GF's collect_results.py picks the first `results/*` dir; with `_nearest` siblings present pass `--experiment_dir` explicitly.
-- growth_metrics.py definitions differ from GF's growth_metrics.py (pooled vs per-plant; nearest references its own source frame); both are reported, do not mix.
-- Monotone head guarantees non-decreasing base distance, not Z-extent.
-- The 150k GPU prior (runs/full_gpu, no decay) is degraded; use full_cpu95k or the cosine prior.
+- GF's collect_results.py picks the first `results/*` dir; pass `--experiment_dir` explicitly when `_nearest` siblings exist.
+- growth_metrics.py definitions differ from GF's own growth script; report both, do not mix.
+- The monotone head guarantees non-decreasing base distance, not Z-extent.
+- The 150k no-decay GPU prior is degraded; use the 95k prior or the cosine prior.

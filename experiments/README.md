@@ -8,7 +8,9 @@ this file is the index. Draft paper: `WRITEUP.md`. Running results table: `RESUL
 |---|---|
 | `DESIGN_MEMO.md` | research memo: GrowFields' weaknesses, Candidates A (MonoGrow), B (TrajDiff, not built), C (RichardsNet), ablation plan, metrics |
 | `RESULTS.md` | the one running results table (paper, repro, nearest, RichardsNet, MonoGrow), findings, decomposition plan, compute log |
-| `WRITEUP.md` | paper-style draft (v0.3): headline numbers in for every method, MonoGrow under both fitting objectives, cosine prior on val; `[PENDING: ...]` only for the GF interpolation/extrapolation fleet tables and the last 2 monotone plants (shards gf1/gf3 pending retrieval) |
+| `WRITEUP.md` | paper-style draft (v1.0): every cell filled; GF and GF + monotone head on all three tables (5/3/3 seeds, 8 plants, both inference rules, `results/gf_fleet/`), MonoGrow under both fitting objectives, RichardsNet, cosine prior on val; no placeholder cells remain |
+| `results/gf_fleet/` | final GF fleet tables, mean ± std over seeds per plant: `{shared,monotone}_continuous{,_interp,_extrap}_{first,nearest}.txt`; `*_growth_nearest.txt` = violation rates / negative-growth mass / length MAE |
+| `gf_on_ours/` | planned: GF and GF + nearest on our Pheno4D full-resolution and Sugar4D sequences (being prepared, not yet run) |
 | `NEXT_STEPS.md` | resume checklist: what is running on which AWS box, morning pull/collect commands, decision list |
 | `growfields/` | vendored GrowFields (commit `3f8e947`) + our `monotone.patch`, CPU venv, TrackPlant3D v2 data, run/collect/export scripts, `BENCHMARK.md` (protocol + paper numbers), `NOTES.md` (monotone head, Mac runs) |
 | `monogrow/` | Candidate A: shared monotone SIREN prior over all training organ tracks, test-time code fitting, our metric scripts (`README.md`) |
@@ -71,7 +73,7 @@ bash export_nearest_all.sh runs nearest       # every finished <exp> -> <exp>_ne
 ```
 `--source first` re-exports GrowFields' own prediction from the saved model (sanity check).
 
-### GrowFields GPU campaign, 5/3/3 seeds, both configs (rows pending)
+### GrowFields GPU campaign, 5/3/3 seeds, both configs (complete: 170 runs, ~90 GPU-hours, ~$100)
 170 jobs: headline shared/monotone 8 plants x 5 seeds; interpolation (`--train_timepoint_stride 2`) 8 x 3; extrapolation
 (`--train_holdout_last_n 3`) 7 x 3 (no SoH2). One process per GPU box, sharded `i mod 3`.
 ```bash
@@ -159,12 +161,20 @@ Val-split family/template/λ ablations: same with `val` and `--family beta`, `--
   57.5 / 8.3 vs 55.4 / 9.1; `results/monogrow_prior_v2cos_val_eval.txt`) but has not been run on test or with the matched
   objective. θ fine-tune lr must stay ≤ 2e-5.
 - `monogrow/runs/tune/*` extrapolation/interpolation rows used a mislabelled step-0 snapshot; ignore them.
-- GrowFields headline: Mac reproduction is 1 seed on CPU, all 8 plants (0.88 / 1.53); the AWS L4 fleet is 5 seeds, all
-  8 plants (0.87 / 1.53; + nearest 0.44 / 1.02) in `growfields/runs_aws/merged/shared_continuous/results_headline{,_nearest}.md`.
-  GF interpolation / extrapolation fleet tables are still in flight: shard gf2 (57 jobs) is pulled, shards gf1 / gf3 are
-  pending retrieval (`RESULTS.md`, Overnight results); quote the paper's point estimates for those until then.
-- GrowFields + monotone head is PARTIAL: 6 of 8 plants (SoH2, TbC1 missing; TbS3 1 seed). Its 6-plant means (0.97 / 1.81;
-  + nearest 0.51 / 1.16) are not comparable to 8-plant means; compare per plant.
+- GrowFields headline: Mac reproduction is 1 seed on CPU, all 8 plants (0.88 / 1.53). The AWS L4 fleet (complete, 170
+  runs) is 5 seeds headline, 3 seeds interpolation / extrapolation, all 8 plants: 0.87 / 1.53, 10.32 / 5.38,
+  98.82 / 21.21 full (133.10 / 18.49 per-organ); + nearest 0.44 / 1.02, 10.93 / 3.65, 133.88 / 11.70 (129.48 / 11.42)
+  (`results/gf_fleet/shared_continuous*.txt`). Quote the fleet numbers with their ± over seeds, not the paper's point
+  estimates, when comparing to our methods; our extrapolation CD is lower than the paper's (98.8 vs 117.7) within its ±.
+- Nearest source on GF: headline halved, tip error roughly halved on every table, Chamfer flat on interpolation and
+  mixed on extrapolation (133.9 ± 22.7 vs 98.8 ± 12.7 full, 129.5 vs 133.1 per-organ). The claim is tip accuracy and
+  short-horizon fit, not extrapolation Chamfer.
+- GrowFields + monotone head, all 8 plants (`results/gf_fleet/monotone_continuous*.txt`): 0.92 / 2.04, 10.25 / 5.61,
+  128.31 / 21.00 full (136.29 / 18.06 per-organ); + nearest 0.58 / 1.37, 10.70 / 3.68, 170.48 / 12.24 (142.34 / 11.64).
+  ~6 % headline CD cost (a third under nearest), equal interpolation and per-organ extrapolation, worse full-plant
+  extrapolation; Z-extent violations 2–3x lower under nearest export (0.028 vs 0.060 headline, 0.007 vs 0.021 interp,
+  0.206 vs 0.265 extrap; `*_growth_nearest.txt`). Extrapolation seed spreads are ±11–23 mm² on means of 99–170: do not
+  claim full-plant extrapolation CD differences between the GF rows.
 - MonoGrow validation numbers are single fits. MonoGrow test numbers are 3 seeds with the 95k CPU prior, under two
   fitting objectives: `fit.objective=first` (GF's multi-step from-first-frame CD; 58.91 / 12.95 headline,
   `monogrow/runs/gpu_test/RESULTS.md` copied into `RESULTS.md`) and `fit.objective=nearest` (one-step nearest-frame CD,

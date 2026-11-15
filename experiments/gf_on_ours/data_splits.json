@@ -1,0 +1,82 @@
+{
+  "description": "Plant-level splits of the converted data/unified sequences (from data/unified/sequences.json). GrowFields fits per plant, so only val/test matter; train is listed for completeness.",
+  "splits": {
+    "train": {
+      "plants": [
+        "pheno4d_maize_M01",
+        "pheno4d_maize_M02",
+        "pheno4d_maize_M03",
+        "pheno4d_maize_M04",
+        "pheno4d_maize_M05",
+        "pheno4d_tomato_T01",
+        "pheno4d_tomato_T02",
+        "pheno4d_tomato_T03",
+        "pheno4d_tomato_T04",
+        "pheno4d_tomato_T05",
+        "sugar4d_sugar_beet_plant_003",
+        "sugar4d_sugar_beet_plant_005",
+        "sugar4d_sugar_beet_plant_006",
+        "sugar4d_sugar_beet_plant_008",
+        "sugar4d_sugar_beet_plant_009",
+        "sugar4d_sugar_beet_plant_013",
+        "sugar4d_sugar_beet_plant_014",
+        "sugar4d_sugar_beet_plant_015",
+        "sugar4d_sugar_beet_plant_017",
+        "sugar4d_sugar_beet_plant_018",
+        "sugar4d_sugar_beet_plant_020",
+        "sugar4d_sugar_beet_plant_021",
+        "sugar4d_sugar_beet_plant_022",
+        "sugar4d_sugar_beet_plant_028",
+        "sugar4d_sugar_beet_plant_030",
+        "sugar4d_sugar_beet_plant_031",
+        "sugar4d_sugar_beet_plant_033",
+        "sugar4d_sugar_beet_plant_034",
+        "sugar4d_sugar_beet_plant_038",
+        "sugar4d_sugar_beet_plant_039",
+        "sugar4d_sugar_beet_plant_042",
+        "sugar4d_sugar_beet_plant_043",
+        "sugar4d_sugar_beet_plant_047",
+        "sugar4d_sugar_beet_plant_048"
+      ],
+      "n_plants": 34
+    },
+    "val": {
+      "plants": [
+        "pheno4d_maize_M06",
+        "pheno4d_tomato_T06",
+        "sugar4d_sugar_beet_plant_001",
+        "sugar4d_sugar_beet_plant_004",
+        "sugar4d_sugar_beet_plant_011",
+        "sugar4d_sugar_beet_plant_019",
+        "sugar4d_sugar_beet_plant_024",
+        "sugar4d_sugar_beet_plant_025",
+        "sugar4d_sugar_beet_plant_027",
+        "sugar4d_sugar_beet_plant_032",
+        "sugar4d_sugar_beet_plant_035",
+        "sugar4d_sugar_beet_plant_036",
+        "sugar4d_sugar_beet_plant_037",
+        "sugar4d_sugar_beet_plant_044"
+      ],
+      "n_plants": 14
+    },
+    "test": {
+      "plants": [
+        "pheno4d_maize_M07",
+        "pheno4d_tomato_T07",
+        "sugar4d_sugar_beet_plant_002",
+        "sugar4d_sugar_beet_plant_007",
+        "sugar4d_sugar_beet_plant_010",
+        "sugar4d_sugar_beet_plant_012",
+        "sugar4d_sugar_beet_plant_016",
+        "sugar4d_sugar_beet_plant_023",
+        "sugar4d_sugar_beet_plant_026",
+        "sugar4d_sugar_beet_plant_029",
+        "sugar4d_sugar_beet_plant_040",
+        "sugar4d_sugar_beet_plant_041",
+        "sugar4d_sugar_beet_plant_045",
+        "sugar4d_sugar_beet_plant_046"
+      ],
+      "n_plants": 14
+    }
+  }
+}
