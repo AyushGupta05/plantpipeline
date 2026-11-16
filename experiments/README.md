@@ -46,7 +46,7 @@ No run; parsed from the arXiv HTML and `REPRODUCIBILITY.md`, tabulated in `growf
 ### GrowFields reproduction, Mac CPU, 1 seed (row "our repro")
 ```bash
 cd growfields
-bash launch_headline.sh                      # detached: run_test_split.sh shared_continuous 1 4 3 ; collect ; run_test_split.sh monotone_continuous 1 4 3 ; collect
+bash run_test_split.sh shared_continuous 1 4 3 && python collect_results.py shared_continuous   # Mac CPU, 1 seed, 4 parallel x 3 threads
 # or by hand:
 bash run_test_split.sh shared_continuous 1 4 3            # 8 test plants, --n_runs 1 --seed 43, P=4 procs x 3 threads, ~5.8 h/plant
 .venv/bin/python collect_results.py shared_continuous     # -> runs/shared_continuous/results.md (CD/EPE per plant + Mean, n_tips 192/189, growth metrics)

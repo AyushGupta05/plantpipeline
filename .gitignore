@@ -23,3 +23,7 @@ experiments/aws/*.log
 snapshots/
 backup/
 .DS_Store
+experiments/gf_on_ours/point_splits/
+experiments/aws/.instances/
+experiments/aws/.current_instance
+experiments/aws/.launch_err

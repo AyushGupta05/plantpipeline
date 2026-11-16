@@ -99,7 +99,7 @@ pytorch3d build ~5 GB + checkpoints -> 200 GB gp3 is comfortable ($16/month); 10
 Workflow (fleet, current): per GF box `YES=1 NAME=gfN ./launch.sh` -> `./sync_data.sh gfN --code --gf-data` -> `./setup_env.sh gfN` ->
 `./ssh.sh gfN 'cd plantpipeline/experiments/growfields && tmux new-session -d -s train "SHARD=k/3 bash campaign_shard.sh 2>&1 | tee -a runs/campaign.log"'`;
 then `./status_all.sh` -> `./pull_results.sh --collect` -> `./stop_all.sh` or `./terminate_all.sh`. The MonoGrow box (`.current_instance`)
-is driven by `./ssh.sh` without a name (`monogrow_gpu.sh` started its `prior` tmux session). Single-box campaign (`campaign.sh`, P=4) is
+is driven by `./ssh.sh` without a name (the prior was started by hand in a `prior` tmux session). Single-box campaign (`campaign.sh`, P=4) is
 superseded: 4 processes on 4 vCPUs are CPU-bound (0.5-0.7 s/step each vs 0.04 alone). Full commands and the instance table in `INSTANCE.md`.
 
 ## 6. One-time manual steps (checklist)
